@@ -170,7 +170,7 @@ app.delete('/collections/:collectionName/:id', async (req, res, next) => {
         res.status(500).send("Error deleting document from the database");
     }
 });
-
+ 
 // 404 Not Found
 app.use(function (req, res) {
     res.status(404).send("Resource not found!");

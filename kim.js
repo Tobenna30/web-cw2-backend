@@ -8,7 +8,7 @@ let propertiesPath = path.resolve(__dirname, "conf/db.properties");
 let properties = propertiesReader(propertiesPath);
 
 
-let dbPprefix = properties.get("db.prefix");
+let dbPprefix = properties.get("db.prefix"); 
 //URL-Encoding of User and PWD
 //for potential special characters
 let dbUsername = encodeURIComponent(properties.get("db.user"));
