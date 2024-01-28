@@ -144,6 +144,27 @@ app.post('/collections/:collectionName', async (req, res, next) => {
     }
 });
 
+// PUT route to update lesson space
+app.put('/collections/:collectionName/:id', async (req, res) => {
+    try {
+        const lessonsCollection = client.db(dbName).collection('lessons');
+        const lessonId = new ObjectId(req.params.id);
+        const updateResult = await lessonsCollection.updateOne(
+            { _id: lessonId },
+            { $inc: { spaces: -1 } }
+        );
+
+        if (updateResult.modifiedCount === 0) {
+            res.status(404).send("Lesson not found or no space available");
+        } else {
+            res.status(200).json({ message: "Updated successfully" });
+        }
+    } catch (error) {
+        console.error("Error updating lesson space:", error);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
 // POST route that saves a new order to the “order” collection
 app.post('/collections/:collectionName', async (req, res, next) => {
     try {
@@ -170,26 +191,26 @@ app.post('/collections/:collectionName', async (req, res, next) => {
 });
 
 
-// PUT route to update lesson space
-app.put('/collections/:collectionName/:id', async (req, res) => {
-    try {
-        const lessonsCollection = client.db(dbName).collection('lessons');
-        const lessonId = new ObjectId(req.params.id);
-        const updateResult = await lessonsCollection.updateOne(
-            { _id: lessonId },
-            { $inc: { spaces: -1 } }
-        );
+// // PUT route to update lesson space
+// app.put('/collections/:collectionName/:id', async (req, res) => {
+//     try {
+//         const lessonsCollection = client.db(dbName).collection('lessons');
+//         const lessonId = new ObjectId(req.params.id);
+//         const updateResult = await lessonsCollection.updateOne(
+//             { _id: lessonId },
+//             { $inc: { spaces: -1 } }
+//         );
 
-        if (updateResult.modifiedCount === 0) {
-            res.status(404).send("Lesson not found or no space available");
-        } else {
-            res.status(200).json({ message: "Updated successfully" });
-        }
-    } catch (error) {
-        console.error("Error updating lesson space:", error);
-        res.status(500).send("Internal Server Error");
-    }
-});
+//         if (updateResult.modifiedCount === 0) {
+//             res.status(404).send("Lesson not found or no space available");
+//         } else {
+//             res.status(200).json({ message: "Updated successfully" });
+//         }
+//     } catch (error) {
+//         console.error("Error updating lesson space:", error);
+//         res.status(500).send("Internal Server Error");
+//     }
+// });
 
 
 // PUT and Update Documents
