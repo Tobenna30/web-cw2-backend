@@ -8,7 +8,7 @@ const morgan = require('morgan');
 const app = express();
 app.set('json spaces', 3);
 
-// Define the path to your properties file
+//  path to my properties file
 const propertiesPath = path.resolve(__dirname, "conf/db.properties");
 const properties = propertiesReader(propertiesPath);
 
@@ -48,7 +48,7 @@ async function connectToMongo() {
 
 connectToMongo();
 
-// Define app.param() middleware to initialize the related collection
+//  middleware to initialize the related collection
 app.param('collectionName', (req, res, next, collectionName) => {
     req.collection = client.db(dbName).collection(collectionName);
     return next();
@@ -59,6 +59,7 @@ app.get('/', function (req, res, next) {
     res.send("Select a collection");
 });
 
+// GET route /lessons that returns all the lessons
 app.get('/collections/:collectionName', async (req, res, next) => {
     try {
         const results = await req.collection.find({}).toArray();
@@ -69,24 +70,6 @@ app.get('/collections/:collectionName', async (req, res, next) => {
     }
 });
 
-// app.get('/collections/:collectionName', async (req, res, next) => {
-//     try {
-//         const maxResults = 3;
-//         const sortField = "price";
-//         const sortOrder = -1; // -1 for descending, 1 for ascending
-
-//         const results = await req.collection
-//             .find({})
-//             .limit(maxResults)
-//             .sort({ [sortField]: sortOrder })
-//             .toArray();
-
-//         res.json(results);
-//     } catch (error) {
-//         console.error("Error fetching collections:", error);
-//         res.status(500).send("Error fetching collections from the database");
-//     }
-// });
 
 
 app.get('/collections/:collectionName/:max/:sortAspect/:sortAscDesc', async (req, res, next) => {
@@ -126,17 +109,83 @@ app.get('/collections/:collectionName/:id', async (req, res, next) => {
     }
 });
 
+// GET route for search
+app.get('/search', async (req, res) => {
+    try {
+        const searchTerm = req.query.term;
+        const lessonsCollection = client.db(dbName).collection('lessons');
+
+        // MongoDB text search
+        const searchResult = await lessonsCollection.find({ 
+            $text: { $search: searchTerm } 
+        }).toArray();
+
+        res.json(searchResult);
+    } catch (error) {
+        console.error("Error during search:", error);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+
 app.post('/collections/:collectionName', async (req, res, next) => {
     try {
+        // TODO: Validate req.body
+
         const result = await req.collection.insertOne(req.body);
-        if (result && result.ops && result.ops.length > 0) {
-            res.json(result.ops[0]);
+
+        // Send the result as JSON response
+        res.json(result);
+    } catch (error) {
+        // Pass any errors to the error-handling middleware
+        next(error);
+    }
+});
+
+// POST route that saves a new order to the “order” collection
+app.post('/collections/:collectionName', async (req, res, next) => {
+    try {
+        // Check if the collectionName is 'orders'
+        if (req.params.collectionName !== 'orders') {
+            // If not 'orders', respond with an error 
+            return res.status(400).send('Invalid collection name for this route');
+        }
+
+        // TODO: Validate req.body for orders
+       
+        if (!req.body.name || !req.body.phoneNumber || !Array.isArray(req.body.lessonIDs)) {
+            return res.status(400).send('Missing or invalid order details');
+        }
+
+        const result = await req.collection.insertOne(req.body);
+
+        // Send the result as JSON response
+        res.json(result);
+    } catch (error) {
+        // Pass any errors to the error-handling middleware
+        next(error);
+    }
+});
+
+
+// PUT route to update lesson space
+app.put('/collections/:collectionName/:id', async (req, res) => {
+    try {
+        const lessonsCollection = client.db(dbName).collection('lessons');
+        const lessonId = new ObjectId(req.params.id);
+        const updateResult = await lessonsCollection.updateOne(
+            { _id: lessonId },
+            { $inc: { spaces: -1 } }
+        );
+
+        if (updateResult.modifiedCount === 0) {
+            res.status(404).send("Lesson not found or no space available");
         } else {
-            res.status(500).send("Error creating document in the database: No document inserted");
+            res.status(200).json({ message: "Updated successfully" });
         }
     } catch (error) {
-        console.error("Error creating document:", error);
-        res.status(500).send("Error creating document in the database: " + error.message);
+        console.error("Error updating lesson space:", error);
+        res.status(500).send("Internal Server Error");
     }
 });
 
@@ -170,14 +219,39 @@ app.delete('/collections/:collectionName/:id', async (req, res, next) => {
         res.status(500).send("Error deleting document from the database");
     }
 });
+
+// Define a route to serve lesson images using express.static middleware
+app.use('/lesson-images', express.static('/Users/tobennaagubuche/Documents/web 3rd year 2nd cw/backend/lesson-images'));
+
+
+// Define a route to handle image requests and return an error if the image does not exist
+app.get('/lesson-images/:imageName', (req, res) => {
+    const { imageName } = req.params;
+    const imagePath = path.join(__dirname, 'lesson-images', imageName);
+  
+    // Check if the image file exists
+    if (fs.existsSync(imagePath)) {
+        // Serve the image if it exists
+        res.sendFile(imagePath);
+    } else {
+        // Return an error message if the image does not exist
+        res.status(404).send('Image not found');
+    }
+});
+
  
 // 404 Not Found
 app.use(function (req, res) {
     res.status(404).send("Resource not found!");
 });
 
-const port = process.env.PORT || 3000;
 
-app.listen(port, function () {
-    console.log("App started on port " + port);
+
+
+
+
+const port = process.env.PORT || 3000;
+app.listen(port, function() {
+   console.log("App started on port: " + port);
 });
+
