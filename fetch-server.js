@@ -4,6 +4,8 @@ const path = require("path");
 const propertiesReader = require("properties-reader");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb"); // Import MongoClient, ServerApiVersion, and ObjectId
 const morgan = require('morgan');
+const fs = require('fs');
+
 
 const app = express();
 app.set('json spaces', 3);
@@ -220,13 +222,12 @@ app.delete('/collections/:collectionName/:id', async (req, res, next) => {
     }
 });
 
-// Define a route to serve lesson images using express.static middleware
-
+//route to serve lesson images using express.static middleware
 app.use('/lesson-images', express.static(path.join(__dirname, 'lesson-images')));
 
 
 
-// Define a route to handle image requests and return an error if the image does not exist
+//  route to handle image requests and return an error if the image does not exist
 app.get('/lesson-images/:imageName', (req, res) => {
     const { imageName } = req.params;
     const imagePath = path.join(__dirname, 'lesson-images', imageName);
