@@ -221,7 +221,9 @@ app.delete('/collections/:collectionName/:id', async (req, res, next) => {
 });
 
 // Define a route to serve lesson images using express.static middleware
-app.use('/lesson-images', express.static('/Users/tobennaagubuche/Documents/web 3rd year 2nd cw/backend/lesson-images'));
+
+app.use('/lesson-images', express.static(path.join(__dirname, 'lesson-images')));
+
 
 
 // Define a route to handle image requests and return an error if the image does not exist
